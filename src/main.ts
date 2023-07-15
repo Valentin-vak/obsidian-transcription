@@ -189,6 +189,7 @@ class TranscriptionSettingTab extends PluginSettingTab {
 			.addDropdown(dropdown => dropdown
 				.addOption('scribe', 'Scribe')
 				.addOption('whisper_asr', 'Whisper ASR')
+				.addOption('local', 'Local')
 				.setValue(this.plugin.settings.transcription_engine)
 				.onChange(async (value) => {
 					this.plugin.settings.transcription_engine = value;

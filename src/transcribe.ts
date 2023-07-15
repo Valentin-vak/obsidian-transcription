@@ -4,6 +4,8 @@ import { format } from "date-fns";
 import { paths, components } from "./types/gambitengine";
 import { payloadGenerator, PayloadData } from "src/utils";
 import { StatusBar } from "./status";
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
 // This class is the parent for transcription engines. It takes settings and a file as an input and returns a transcription as a string
 
@@ -18,7 +20,8 @@ export class TranscriptionEngine {
 
     transcription_engines: { [key: string]: TranscriptionBackend } = {
         "scribe": this.getTranscriptionScribe,
-        "whisper_asr": this.getTranscriptionWhisperASR
+        "whisper_asr": this.getTranscriptionWhisperASR,
+        "local": this.getTranscriptionLocal
     }
 
     constructor(settings: TranscriptionSettings, vault: Vault, statusBar: StatusBar | null) {
@@ -64,7 +67,31 @@ export class TranscriptionEngine {
             return transcription;
         })
     }
-
+    async getTranscriptionLocal(file: TFile): Promise<string> {
+        const execP = promisify(exec)
+        console.log(`file path: ${file.path}`)
+        console.log(`file name: ${file.name}`)
+        console.log(`file extension: ${file.extension}`)
+        console.log(`file basename: ${file.basename}`)
+        //convert to Wav
+        console.log('ffmpeg output: ' + await execP(`ffmpeg -i ${file.path} -acodec pcm_s16le -ac 1 -ar 16000 out.wav`));
+        //send to docker
+        //run image
+        const containerId = (await execP("docker run -dt citrinet")).stdout
+        console.log("conteinerID: " + containerId);
+        //copy file
+        console.log("copy")
+        await execP(`docker cp out.wav ${containerId}:/workspace/nemo/out.wav`)
+        //run transcription
+        console.log("transcription output: " + await execP(`docker container exec ${containerId} python citrinet.py out.wav`))
+        //read output
+        const transcriptions = (await execP(`docker container exec ${containerId} cat out.txt`)).stdout
+        //remove conversion file
+        await execP('rm out.wav');
+        const json = JSON.parse(transcriptions);
+        if (Array.isArray(json)) return json[0];
+        else return transcriptions;
+    }
     async getTranscriptionWhisperASR(file: TFile): Promise<string> {
         // Now that we have the form data payload as an array buffer, we can pass it to requestURL
         // We also need to set the content type to multipart/form-data and pass in the Boundary string
