@@ -68,29 +68,36 @@ export class TranscriptionEngine {
         })
     }
     async getTranscriptionLocal(file: TFile): Promise<string> {
+        function log<T>(a: Promise<T>): Promise<T> {
+            return a.then(v => {
+                console.log("value: " + JSON.stringify(v)); 
+                return v;
+            })
+            .catch(e => {
+                console.log('error: + ' + JSON.stringify(e)); 
+                return Promise.reject<T>()
+            });
+        }
         const execP = promisify(exec)
-        console.log(`file path: ${file.path}`)
-        console.log(`file name: ${file.name}`)
-        console.log(`file extension: ${file.extension}`)
-        console.log(`file basename: ${file.basename}`)
+        // const fileName = file.name
         //convert to Wav
-        console.log('ffmpeg output: ' + await execP(`ffmpeg -i ${file.path} -acodec pcm_s16le -ac 1 -ar 16000 out.wav`));
+        await log(execP(`/opt/homebrew/bin/ffmpeg -i "/Users/valentyn_vakatsiienko/Library/Mobile Documents/iCloud~md~obsidian/Documents/Wolik/${file.path}" -acodec pcm_s16le -ac 1 -ar 16000 "/Users/valentyn_vakatsiienko/Library/Mobile Documents/iCloud~md~obsidian/Documents/Wolik/${file.name}.wav"`));
         //send to docker
         //run image
-        const containerId = (await execP("docker run -dt citrinet")).stdout
-        console.log("conteinerID: " + containerId);
+        await log(execP("/usr/local/bin/docker start citrinet"))
         //copy file
-        console.log("copy")
-        await execP(`docker cp out.wav ${containerId}:/workspace/nemo/out.wav`)
-        //run transcription
-        console.log("transcription output: " + await execP(`docker container exec ${containerId} python citrinet.py out.wav`))
-        //read output
-        const transcriptions = (await execP(`docker container exec ${containerId} cat out.txt`)).stdout
+        await log(execP(`/usr/local/bin/docker cp "/Users/valentyn_vakatsiienko/Library/Mobile Documents/iCloud~md~obsidian/Documents/Wolik/${file.path}.wav" citrinet:/workspace/nemo/${file.name}.wav`))
         //remove conversion file
-        await execP('rm out.wav');
-        const json = JSON.parse(transcriptions);
-        if (Array.isArray(json)) return json[0];
-        else return transcriptions;
+        await execP(`rm "/Users/valentyn_vakatsiienko/Library/Mobile Documents/iCloud~md~obsidian/Documents/Wolik/${file.path}.wav"`);
+        //run transcription
+        console.log("transcription output: " + await execP(`/usr/local/bin/docker container exec citrinet python citrinet.py ${file.name}.wav`))
+        //read output
+        console.log("reading output")
+        const transcriptions = (await execP(`/usr/local/bin/docker container exec citrinet cat ${file.name}.wav.txt`)).stdout
+        console.log("output: " + JSON.stringify(transcriptions));
+        // const json = JSON.parse("[" + transcriptions.substring(1, transcriptions.length - 2).replaceAll(`'`, `"`) + "]");
+        // if (Array.isArray(json)) return json[0];
+        return transcriptions;
     }
     async getTranscriptionWhisperASR(file: TFile): Promise<string> {
         // Now that we have the form data payload as an array buffer, we can pass it to requestURL
