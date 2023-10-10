@@ -193,6 +193,7 @@ class TranscriptionSettingTab extends PluginSettingTab {
 			.addDropdown(dropdown => dropdown
 				.addOption('swiftink', 'Swiftink')
 				.addOption('whisper_asr', 'Whisper ASR')
+				.addOption('azure_speech_service', 'Azure Speech Service')
 				.setValue(this.plugin.settings.transcription_engine)
 				.onChange(async (value) => {
 					this.plugin.settings.transcription_engine = value;

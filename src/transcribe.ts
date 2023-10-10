@@ -5,7 +5,7 @@ import { paths, components } from "./types/swiftink";
 import { payloadGenerator, PayloadData } from "src/utils";
 import { StatusBar } from "./status";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
-import { getWaveBlob } from "webm-to-wav-converter";
+import { getWaveBlob } from "./wav/wavBlobUtil";
 
 // This class is the parent for transcription engines. It takes settings and a file as an input and returns a transcription as a string
 

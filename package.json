@@ -41,7 +41,6 @@
 	},
 	"dependencies": {
 		"date-fns": "^2.29.3",
-    "microsoft-cognitiveservices-speech-sdk": "^1.31.0",
-		"webm-to-wav-converter": "1.1.0"
+    "microsoft-cognitiveservices-speech-sdk": "^1.31.0"
 	}
 }
